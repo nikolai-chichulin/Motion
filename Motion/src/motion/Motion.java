@@ -11,10 +11,18 @@ import java.util.Locale;
 
 public class Motion {
 
+	enum Phase {
+		phase_1, // start of acceleration
+		phase_2, // end of acceleration
+		phase_3, // start of deceleration
+		phase_4; // end of deceleration
+	}
+
 	private static double dtime = 0.001;
 	private double vmax;
 	private double jerkmax;
 	private double amax;
+	private Phase phase;
 
 	private BufferedWriter bw = null;
 
@@ -36,6 +44,7 @@ public class Motion {
 
 	public void Run(double tmax) {
 		System.out.println("Motion started.");
+		phase = Phase.phase_1;
 		double t = 0;
 		double x = 0;
 		double v = 0;
@@ -52,17 +61,37 @@ public class Motion {
 			jAct = -aAct;
 			aAct = -v;
 
-			// Start of acceleration (Phase I)
-			double da = jerkmax * dtime;
-			a += da;
-			if (a > amax) {
-				a = amax;
+			// phase definition
+			double acrit = Math.sqrt(2 * jerkmax * (vmax - v));
+			if (a >= acrit) {
+				phase = Phase.phase_2;
 			}
-			double dv = a * dtime;
-			v += dv;
-			if (v > vmax) {
-				v = vmax;
+
+			// acceleration control
+			switch (phase) {
+			case phase_1: // acceleration tries to increase up to amax
+				a += jerkmax * dtime;
+				if (a > amax) {
+					a = amax;
+				}
+				v += a * dtime;
+				break;
+			case phase_2: // acceleration decreases to zero
+				a -= jerkmax * dtime;
+				if (a < 0) {
+					a = 0;
+				}
+				v += a * dtime;
+				break;
+			case phase_3:
+				break;
+			case phase_4:
+				break;
+			default:
+				break;
 			}
+
+			// motion continues
 			double dx = v * dtime;
 			x += dx;
 
@@ -72,13 +101,9 @@ public class Motion {
 			jAct += aAct; // actual j
 			jAct /= dtime;
 
-			// End of acceleration (Phase II)
-			//double ts = 0.5 * (1 + Math.sqrt(1 + 8 * (vmax - v) / jerkmax));
-			double jreq = 2*(vmax-v)/(t)
-
 			// print
 			try {
-				String line = String.format(Locale.US, "%15f%15f%15f%15f%15f%15f\n", t, x, v, aAct, jAct, ts);
+				String line = String.format(Locale.US, "%15f%15f%15f%15f%15f\n", t, x, v, aAct, jAct);
 				bw.write(line); // header
 			} catch (IOException e) {
 				e.printStackTrace();

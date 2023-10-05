@@ -9,7 +9,7 @@ public class Runner {
 		double amax = 50;
 		double jmax = 50;
 		Motion motion = new Motion(vmax, amax, jmax);
-		motion.Run(3);
+		motion.Run(5);
 	}
 
 }
