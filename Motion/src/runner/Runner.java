@@ -5,7 +5,10 @@ import motion.Motion;
 public class Runner {
 
 	public static void main(String[] args) {
-		Motion motion = new Motion(10, 50, 50);
+		double vmax = 100;
+		double amax = 50;
+		double jmax = 50;
+		Motion motion = new Motion(vmax, amax, jmax);
 		motion.Run(3);
 	}
 

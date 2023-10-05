@@ -52,6 +52,7 @@ public class Motion {
 			jAct = -aAct;
 			aAct = -v;
 
+			// Start of acceleration (Phase I)
 			double da = jerkmax * dtime;
 			a += da;
 			if (a > amax) {
@@ -71,9 +72,13 @@ public class Motion {
 			jAct += aAct; // actual j
 			jAct /= dtime;
 
+			// End of acceleration (Phase II)
+			//double ts = 0.5 * (1 + Math.sqrt(1 + 8 * (vmax - v) / jerkmax));
+			double jreq = 2*(vmax-v)/(t)
+
 			// print
 			try {
-				String line = String.format(Locale.US, "%15f%15f%15f%15f%15f\n", t, x, v, aAct, jAct);
+				String line = String.format(Locale.US, "%15f%15f%15f%15f%15f%15f\n", t, x, v, aAct, jAct, ts);
 				bw.write(line); // header
 			} catch (IOException e) {
 				e.printStackTrace();
