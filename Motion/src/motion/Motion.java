@@ -22,6 +22,7 @@ public class Motion {
 	private double vmax;
 	private double jerkmax;
 	private double amax;
+	private double err_v = 0.001;
 	private Phase phase;
 
 	private BufferedWriter bw = null;
@@ -107,6 +108,11 @@ public class Motion {
 				bw.write(line); // header
 			} catch (IOException e) {
 				e.printStackTrace();
+			}
+
+			// stop?
+			if (Math.abs(v - vmax) < err_v) {
+				break;
 			}
 		}
 		try {
