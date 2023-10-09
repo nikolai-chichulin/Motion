@@ -28,7 +28,7 @@ public class Motion3 extends Motion {
 		int step = 0;
 		double t = 0;
 		double x = 0;
-		double v = 0;
+		double v = 10;
 		double a = 0;
 		double aPrev = 0;
 		double aAct = 0;
@@ -37,7 +37,7 @@ public class Motion3 extends Motion {
 			// next time step
 			step++;
 			t += dtime;
-			if (t > tmax) {
+			if (t > tmax || v < 0) {
 				break;
 			}
 
@@ -55,16 +55,16 @@ public class Motion3 extends Motion {
 
 			// acceleration control
 			switch (phase) {
-			case phase_1: // acceleration tries to reach maximum, possibly amax
+			case phase_1: // the first phase of acceleration, acceleration tends to amax
 				a += CORR_J * jerkmax * dtime;
 				if (a > amax) {
 					a = amax;
 				}
 				break;
-			case phase_2: // acceleration decreases, velocity tries to reach vmax
-				// regulate the jerk at every time step
+			case phase_2: // the second phase of acceleration, it tends to zero, velocity tends to vmax
+				// we need to regulate the jerk at every time step
 				// to avoid mesh error and come exactly to vmax
-				// if use jmax, velocity will come to vmax+-delta
+				// otherwise, (if use j=jmax), velocity will come to vmax+-delta
 				if (!Motion.isAlmostEqual(v, vmax)) {
 					double j = 0.5 * aPrev * aPrev / (vmax - v);
 					if (j > jerkmax) {
@@ -78,7 +78,8 @@ public class Motion3 extends Motion {
 					phase = Phase.phase_3;
 				}
 				break;
-			case phase_3:
+			case phase_3: // the first deceleration phase, acceleration tends to -amax
+				a -= CORR_J * jerkmax * dtime; // a < 0
 				break;
 			case phase_4:
 				break;
@@ -99,10 +100,6 @@ public class Motion3 extends Motion {
 
 			// print
 			output(t, x, v, aAct, jAct);
-
-			if (phase == Phase.phase_3) {
-				break;
-			}
 		}
 		close();
 	}
