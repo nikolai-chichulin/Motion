@@ -14,7 +14,7 @@ public abstract class Motion {
 	protected double vmax;
 	protected double amax;
 	private BufferedWriter bw = null;
-	private static final double TOL = 1E-10;
+	private static final double TOL = 1E-10; // numerical precision
 
 	abstract public void Run(double tmax);
 
@@ -23,23 +23,17 @@ public abstract class Motion {
 			Charset cset = StandardCharsets.UTF_8;
 			Path pw = Paths.get(fname);
 			bw = Files.newBufferedWriter(pw, cset);
-			String line = String.format(Locale.US, "%15s%15s%15s%15s%15s\n", "time", "X", "V", "a", "Jerk");
+			String line = String.format(Locale.US, "%20s%20s%20s%20s%20s\n", "time", "X", "V", "a", "Jerk");
 			bw.write(line);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("Motion created.");
+		System.out.println("File opened.");
 	}
 
 	protected void output(double t, double x, double v, double a, double j) {
 		try {
-			if (j > 100000) {
-				j = 100000;
-			}
-			if (j < -100000) {
-				j = -100000;
-			}
-			String line = String.format(Locale.US, "%15f%15f%15f%15f%15f\n", t, x, v, a, j);
+			String line = String.format(Locale.US, "%20f%20f%20f%20f%20f\n", t, x, v, a, j);
 			bw.write(line); // header
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -52,7 +46,7 @@ public abstract class Motion {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("Motion finished.");
+		System.out.println("File closed.");
 	}
 
 	public static boolean isAlmostEqual(double a, double b, double tol) {
@@ -61,5 +55,9 @@ public abstract class Motion {
 
 	public static boolean isAlmostEqual(double a, double b) {
 		return Math.abs(a - b) <= TOL;
+	}
+
+	public static boolean isAlmostZero(double a) {
+		return Math.abs(a) <= TOL;
 	}
 }
