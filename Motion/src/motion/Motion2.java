@@ -16,7 +16,7 @@ public final class Motion2 extends Motion {
 	}
 
 	@Override
-	public void Run(double tmax) {
+	public void Run(double tmax, double ep) {
 		System.out.println("Motion started.");
 		phase = Phase.phase_1;
 		double t = 0;

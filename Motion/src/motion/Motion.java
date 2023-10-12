@@ -16,7 +16,7 @@ public abstract class Motion {
 	private BufferedWriter bw = null;
 	private static final double TOL = 1E-10; // numerical precision
 
-	abstract public void Run(double tmax);
+	abstract public void Run(double tmax, double ep);
 
 	protected void header(String fname) {
 		try {
