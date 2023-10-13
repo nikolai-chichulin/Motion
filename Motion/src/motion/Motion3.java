@@ -41,85 +41,241 @@ public class Motion3 extends Motion {
 		this.vmax = vmax;
 		this.amax = amax;
 		this.jerkmax = jmax;
-		estimate_acceleration();
+		double accDist = getAccelerationDistance();
+		double decDist = getDecelerationDistance();
+		System.out.println("Sacc = " + Double.toString(accDist));
+		System.out.println("Sdec = " + Double.toString(decDist));
 		header("motion3.out");
 		System.out.println("Motion 3 created.");
 	}
 
-	private double getTime(double as, double ae, double j) {
+	/**
+	 * Returns duration of a third order motion.
+	 * 
+	 * @param as starting acceleration
+	 * @param ae ending acceleration
+	 * @param j  jerk
+	 * @return duration of the motion
+	 */
+	private double getTime3Order(double as, double ae, double j) {
 		if (Motion.isAlmostZero(j)) {
 			return Double.NaN;
 		}
 		return (ae - as) / j;
 	}
 
-	private double getSpeed(double Vs, double as, double ae, double j) {
+	/**
+	 * Returns the ending velocity in a second order motion.
+	 * 
+	 * @param Vs starting velocity
+	 * @param a  acceleration
+	 * @param t  time
+	 * @return the ending velocity
+	 */
+	private double getSpeed2Order(double Vs, double a, double t) {
+		return Vs + a * t;
+	}
+
+	/**
+	 * Returns the ending velocity in a third order motion.
+	 * 
+	 * @param Vs starting velocity
+	 * @param as starting acceleration
+	 * @param ae ending acceleration
+	 * @param j  jerk
+	 * @return the ending velocity
+	 */
+	private double getSpeed3Order(double Vs, double as, double ae, double j) {
 		if (Motion.isAlmostZero(j)) {
 			return Double.NaN;
 		}
 		return Vs + (ae * ae - as * as) / (2 * j);
 	}
 
-	private double getDistance(double Vs, double as, double ae, double j) {
+	/**
+	 * Returns distance traveled in a second order motion.
+	 * 
+	 * @param Vs starting velocity
+	 * @param a  acceleration
+	 * @param t  time
+	 * @return
+	 */
+	private double getDistance2Order(double Vs, double a, double t) {
+		return Vs * t + 0.5 * a * t * t;
+	}
+
+	/**
+	 * Returns distance traveled in a third order motion.
+	 * 
+	 * @param Vs starting velocity
+	 * @param as starting acceleration
+	 * @param ae ending acceleration
+	 * @param j  jerk
+	 * @return distance traveled
+	 */
+	private double getDistance3Order(double Vs, double as, double ae, double j) {
 		if (Motion.isAlmostZero(j)) {
 			return Double.NaN;
 		}
 		return Vs * (ae - as) / j + (ae - as) * (ae - as) * (ae + 2 * as) / (6 * j * j);
 	}
 
-	private void estimate_acceleration() {
+	/**
+	 * Estimates the ramping up phases.
+	 */
+	private double getAccelerationDistance() {
 		double j = jerkmax * CORR_J;
-		double Vs = 0;
+		// starting values
+		double vs = 0;
 		double as = 0;
+		// Phase 1
 		double t1 = 0;
-		double t2 = (vmax - Vs) / amax - amax / j + as * as / (2 * amax * j);
+		double a1 = 0;
+		double v1 = 0;
+		double s1 = 0;
+		// Phase 2
+		double t2 = (vmax - vs) / amax - amax / j + (as * as) / (2 * amax * j);
+		double a2 = 0;
+		double v2 = 0;
+		double s2 = 0;
+		// Phase 2
 		double t3 = 0;
-		double S1 = 0;
-		double S2 = 0;
-		double S3 = 0;
-		double V1 = 0;
-		double V2 = 0;
-		double V3 = 0;
+		double a3 = 0;
+		double s3 = 0;
+		double v3 = 0;
 
 		if (t2 > 0) {
-			System.out.println("t2 > 0");
-			t1 = (amax - as) / j;
-			t3 = amax / j;
-			// S1 = Vs * (amax - as) / j + (amax - as) * (amax - as) * (amax - 2 * as) / //
-			// (6 * j * j);
-			S1 = getDistance(Vs, as, amax, j);
-			// V1 = Vs + (amax * amax - as * as) / (2 * j);
-			V1 = getSpeed(Vs, as, amax, j);
-			S2 = V1 * t2 + amax * t2 * t2 / 2;
-			V2 = V1 + amax * t2;
-			// S3 = V2 * amax / j + 2 * amax * amax * amax / (6 * j * j);
-			S3 = getDistance(Vs, amax, 0, j);
+			System.out.println("t2 > 0, Phase 2 exists");
+			a1 = amax;
+			System.out.println("Phase 1 acceleration = " + Double.toString(a1));
+			// Phase 1 acceleration grows
+			t1 = getTime3Order(as, a1, j);
+			v1 = getSpeed3Order(vs, as, a1, j);
+			s1 = getDistance3Order(vs, as, a1, j);
+			// Phase 2 constant acceleration
+			a2 = a1;
+			v2 = getSpeed2Order(v1, amax, t2);
+			s2 = getDistance2Order(v1, amax, t2);
+			// Phase 3 acceleration ramping down
+			a3 = 0;
+			t3 = getTime3Order(a2, a3, -j);
+			v3 = getSpeed3Order(v2, a2, a3, -j);
+			s3 = getDistance3Order(v2, a2, a3, -j);
 		} else {
-			System.out.println("t2 = 0");
+			System.out.println("t2 = 0, no Phase 2");
+			// peak acceleration reached > 0
+			a1 = Math.sqrt((vmax - vs) * j + as * as / 2);
+			System.out.println("Phase 1 acceleration = " + Double.toString(a1));
+			// Phase 1
+			t1 = getTime3Order(as, a1, j);
+			v1 = getSpeed3Order(vs, as, a1, j);
+			s1 = getDistance3Order(vs, as, a1, j);
+			// Phase 2
 			t2 = 0;
-			double ap = Math.sqrt((vmax - Vs) * j + as * as / 2);
-			System.out.println("Apeak = " + Double.toString(ap));
-			t1 = (Math.sqrt((vmax - Vs) * j + as * as / 2) - as) / j;
-			V1 = Vs + (ap * ap - as * as) / (2 * j);
-			t3 = Math.sqrt((vmax - Vs) * j + as * as / 2) / j;
-			S1 = Vs * (ap - as) / j + (ap - as) * (ap - as) * (ap - 2 * as) / (6 * j * j);
-			S2 = 0;
-			// S = Vs * (ae - as) / j + (ae - as)^2 * (ae + 2as) / (6j^2)
-			// S1 = Vs * (a1 - as) / j1 + (a1 - as)^2 * (a1 - 2as) / (6j1^2)
-			// S3 = -V2 * a2 / j3 - 2a2^3 / (6j3^2)
-			S3 = V1 * ap / j + 2 * ap * ap * ap / (6 * j * j);
+			a2 = a1;
+			v2 = v1;
+			s2 = 0;
+			// Phase 3
+			a3 = 0;
+			t3 = getTime3Order(a2, a3, -j);
+			v3 = getSpeed3Order(v2, a2, a3, -j);
+			s3 = getDistance3Order(v2, a2, a3, -j);
 		}
-		double Sacc = S1 + S2 + S3;
-		System.out.println("t1 = " + Double.toString(t1));
-		System.out.println("t2 = " + Double.toString(t2));
-		System.out.println("t3 = " + Double.toString(t3));
-		System.out.println("V1 = " + Double.toString(V1));
-		System.out.println("V2 = " + Double.toString(V2));
-		System.out.println("V3 = " + Double.toString(V3));
-		System.out.println("S1 = " + Double.toString(S1));
-		System.out.println("S2 = " + Double.toString(S2));
-		System.out.println("S3 = " + Double.toString(S3));
-		System.out.println("Sacc = " + Double.toString(Sacc));
+		double tacc = t1 + t2 + t3;
+		double sacc = s1 + s2 + s3;
+//		System.out.println("Acceleration phases:");
+//		System.out.println("t1 = " + Double.toString(t1));
+//		System.out.println("t2 = " + Double.toString(t2));
+//		System.out.println("t3 = " + Double.toString(t3));
+//		System.out.println("V1 = " + Double.toString(v1));
+//		System.out.println("V2 = " + Double.toString(v2));
+//		System.out.println("V3 = " + Double.toString(v3));
+//		System.out.println("S1 = " + Double.toString(s1));
+//		System.out.println("S2 = " + Double.toString(s2));
+//		System.out.println("S3 = " + Double.toString(s3));
+		System.out.println("Tacc = " + Double.toString(tacc));
+		System.out.println("Sacc = " + Double.toString(sacc));
+		return sacc;
+	}
+
+	/**
+	 * Estimates the ramping up phases.
+	 */
+	private double getDecelerationDistance() {
+		double j = jerkmax * CORR_J;
+		// starting values
+		double v4 = vmax;
+		double a4 = 0;
+		// given residue values
+		double vres = 0;
+		double ares = 0;
+		// Phase 5
+		double t5 = 0;
+		double a5 = 0;
+		double v5 = 0;
+		double s5 = 0;
+		// Phase 6
+		double t6 = -(vres - v4 + (amax * amax) / j - (a4 * a4 + ares * ares) / (2 * j)) / amax;
+		double a6 = 0;
+		double v6 = 0;
+		double s6 = 0;
+		// Phase 7
+		double t7 = 0;
+		double a7 = 0;
+		double v7 = 0;
+		double s7 = 0;
+
+		if (t6 > 0) {
+			System.out.println("t6 > 0, Phase 6 exists");
+			// peak acceleration reached = -amax
+			a5 = -amax;
+			System.out.println("Phase 5 acceleration = " + Double.toString(a5));
+			// Phase 5 deceleration grows
+			t5 = getTime3Order(a4, a5, -j);
+			v5 = getSpeed3Order(v4, a4, a5, -j);
+			s5 = getDistance3Order(v4, a4, a5, -j);
+			// Phase 6 constant deceleration
+			a6 = a5;
+			v6 = getSpeed2Order(v5, a6, t6);
+			s6 = getDistance2Order(v5, a6, t6);
+			// Phase 7 deceleration ramping down
+			t7 = getTime3Order(a6, ares, j);
+			v7 = getSpeed3Order(v6, a6, ares, j);
+			s7 = getDistance3Order(v6, a6, ares, j);
+		} else {
+			System.out.println("t6 = 0, no Phase 6");
+			// peak acceleration reached > -amax
+			a5 = -Math.sqrt((v4 - vres) * j + (a4 * a4 + ares * ares) / 2);
+			System.out.println("Phase 5 acceleration = " + Double.toString(a5));
+			// Phase 5 deceleration grows
+			t5 = getTime3Order(a4, a5, -j);
+			v5 = getSpeed3Order(v4, a4, a5, -j);
+			s5 = getDistance3Order(v4, a4, a5, -j);
+			// Phase 6 constant deceleration
+			t6 = 0;
+			a6 = a5;
+			v6 = v5;
+			s6 = 0;
+			// Phase 7 deceleration ramping down
+			t7 = getTime3Order(a6, ares, j);
+			v7 = getSpeed3Order(v6, a6, ares, j);
+			s7 = getDistance3Order(v6, a6, ares, j);
+		}
+		double tdec = t5 + t6 + t7;
+		double sdec = s5 + s6 + s7;
+//		System.out.println("Deceleration phases:");
+//		System.out.println("t5 = " + Double.toString(t5));
+//		System.out.println("t6 = " + Double.toString(t6));
+//		System.out.println("t7 = " + Double.toString(t7));
+//		System.out.println("V5 = " + Double.toString(v5));
+//		System.out.println("V6 = " + Double.toString(v6));
+//		System.out.println("V7 = " + Double.toString(v7));
+//		System.out.println("S5 = " + Double.toString(s5));
+//		System.out.println("S6 = " + Double.toString(s6));
+//		System.out.println("S7 = " + Double.toString(s7));
+		System.out.println("Tdec = " + Double.toString(tdec));
+		System.out.println("Sdec = " + Double.toString(sdec));
+		return sdec;
 	}
 
 	private double getAcceleration(double t, double v, double a) {
