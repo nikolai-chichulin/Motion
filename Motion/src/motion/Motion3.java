@@ -43,7 +43,6 @@ public class Motion3 extends Motion {
 		System.out.println("Sacc = " + Double.toString(accDist));
 		System.out.println("Sdec = " + Double.toString(decDist));
 		header("motion3.out");
-		System.out.println("Motion 3 created.");
 	}
 
 	/**
@@ -345,7 +344,8 @@ public class Motion3 extends Motion {
 	}
 
 	boolean stop(double pos, double v) {
-		return pos > xend || (phase != Phase.phase_1 && Motion.isAlmostZero(v));
+		// return pos > xend || (phase != Phase.phase_1 && Motion.isAlmostZero(v));
+		return phase != Phase.phase_1 && Motion.isAlmostZero(v);
 	}
 
 	@Override
@@ -390,5 +390,13 @@ public class Motion3 extends Motion {
 		}
 		close();
 		System.out.println("Motion 3 finished.");
+
+		if (Motion.isAlmostEqual(x, ep)) {
+			System.out.println("Hit the target!");
+		} else {
+			System.out.println("Didn't hit the target...");
+			System.out.println("EP   = " + ep);
+			System.out.println("Xact = " + x);
+		}
 	}
 }

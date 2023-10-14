@@ -28,7 +28,6 @@ public abstract class Motion {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("File opened.");
 	}
 
 	protected void output(double t, double x, double v, double a, double j) {
@@ -46,7 +45,6 @@ public abstract class Motion {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("File closed.");
 	}
 
 	public static boolean isAlmostEqual(double a, double b, double tol) {

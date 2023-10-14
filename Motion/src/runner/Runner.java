@@ -10,8 +10,8 @@ public class Runner {
 		double amax = 150; // MM/s^2
 		double jmax = 5000; // MM/s^3
 		Motion motion3 = new Motion3(vmax, amax, jmax);
-		double tmax = 100;
-		double xend = 600;
+		double tmax = 300;
+		double xend = 5;
 		motion3.Run(tmax, xend);
 	}
 
