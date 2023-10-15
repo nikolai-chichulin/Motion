@@ -176,10 +176,14 @@ public class Motion3 extends Motion {
 
 	private static double getCorrectedJerk(double jerk, double s2go, double Vs, double as, double Ve, double ae) {
 
+		double ret = jerk;
 		double jerkCorrectedVA = getJerkCorrectedVA(jerk, Vs, as, Ve, ae);
-		// double jerkCorrectedS = getJerkCorrectedS(jerk, s2go, Vs, as, ae);
+		double jerkCorrectedS = getJerkCorrectedS(jerk, s2go, Vs, as, ae);
+		if (s2go > 0) {
+			ret = jerkCorrectedS;
+		}
 
-		return jerkCorrectedVA;
+		return ret;
 	}
 
 	/**
@@ -417,9 +421,10 @@ public class Motion3 extends Motion {
 		return aNext;
 	}
 
-	boolean stop(double pos, double v) {
+	boolean stop(double t, double tmax, double s2go, double v) {
 		// return pos > xend || (phase != Phase.phase_1 && Motion.isAlmostZero(v));
-		return phase != Phase.phase_1 && Motion.isAlmostZero(v);
+		// return phase != Phase.phase_1 && Motion.isAlmostZero(v);
+		return (phase != Phase.phase_1 && Motion.isAlmostZero(v)) || t > tmax || s2go < -0.01;
 	}
 
 	@Override
@@ -433,7 +438,7 @@ public class Motion3 extends Motion {
 		double jAct = 0;
 		int step = 0;
 		boolean rampdown = false;
-		while (!stop(x, v)) {
+		while (!stop(t, tmax, xend - x, v)) {
 			// next time step
 			t = (step++) * dtime;
 			jAct = -a; // actual jerk
