@@ -117,6 +117,72 @@ public class Motion3 extends Motion {
 	}
 
 	/**
+	 * Correction of decelerating jerk so that speed and acceleration match the
+	 * final values.
+	 *
+	 * @param jerk initial jerk
+	 * @param Vs   starting velocity
+	 * @param as   starting acceleration
+	 * @param Ve   ending velocity
+	 * @param ae   ending acceleration
+	 * @return the corrected jerk
+	 */
+	private static double getJerkCorrectedVA(double jerk, double Vs, double as, double Ve, double ae) {
+		// Ve = Vs + (ae^2 - as^2) / 2j =>
+		// j = (ae^2 - as^2) / (Ve - Vs) / 2
+		if (!Motion.isAlmostEqual(Ve, Vs)) {
+			jerk = 0.5 * (ae * ae - as * as) / (Ve - Vs);
+		}
+		return jerk;
+	}
+
+	/**
+	 * Correction of decelerating jerk so that distance matches the final value.
+	 * 
+	 * @param jerk initial jerk
+	 * @param s    starting position
+	 * @param Vs   starting velocity
+	 * @param as   starting acceleration
+	 * @param se   ending position
+	 * @param ae   ending acceleration
+	 * @return the corrected jerk
+	 */
+	private static double getJerkCorrectedS(double jerk, double s2go, double Vs, double as, double ae) {
+		// Se = Vs * (ae - as) / j + (ae - as)^2 * (ae + 2as) / (6j^2) =>
+		// 6j^2 * Se - 6j * Vs * (ae - as) - (ae - as)^2 * (ae + 2as) = 0
+		boolean output = false;
+		double d = 1 - 2 * s2go * (ae + 2 * as) / (3 * Vs * Vs);
+		if (d >= 0) {
+			d = Math.sqrt(d);
+			double tmp = 0.5 * Vs * (ae - as) / s2go;
+			double jerkS1 = tmp * (1 + d);
+			double jerkS2 = tmp * (1 - d);
+			double s2epred1 = getDistance3Order(Vs, as, ae, jerkS1);
+			double s2epred2 = getDistance3Order(Vs, as, ae, jerkS2);
+			if (jerkS1 * jerkS2 < 0 && jerkS1 > 0) {
+				jerk = jerkS1;
+			}
+			if (output) {
+				System.out.println("Phase 7 jerkS1 = " + Double.toString(jerkS1));
+				System.out.println("Phase 7 jerkS2 = " + Double.toString(jerkS2));
+				System.out.println("Phase 7 jerk = " + Double.toString(jerk));
+				System.out.println("Phase 7 spred  = " + Double.toString(s2epred1));
+				System.out.println("Phase 7 spred  = " + Double.toString(s2epred2));
+				System.out.println("Phase 7 dsact  = " + Double.toString(s2go));
+			}
+		}
+		return jerk;
+	}
+
+	private static double getCorrectedJerk(double jerk, double s2go, double Vs, double as, double Ve, double ae) {
+
+		double jerkCorrectedVA = getJerkCorrectedVA(jerk, Vs, as, Ve, ae);
+		// double jerkCorrectedS = getJerkCorrectedS(jerk, s2go, Vs, as, ae);
+
+		return jerkCorrectedVA;
+	}
+
+	/**
 	 * Estimates the ramping up distance.
 	 * 
 	 * @param vs   starting velocity
@@ -315,7 +381,7 @@ public class Motion3 extends Motion {
 				if (a * a >= (2 * CORR_J * jerkmax * v)) {
 					phase = Phase.phase_7;
 					time7 = t;
-					System.out.println("Phase 7 started at t = " + Double.toString(time7));
+					System.out.println("Phase 7 started at t = " + time7 + " s = " + s);
 				}
 			} else {
 				phase = Phase.phase_7;
@@ -324,7 +390,15 @@ public class Motion3 extends Motion {
 			}
 			break;
 		case phase_7: // acceleration tends to zero
-			jerk = 0.5 * a * a / v; // jerk > 0
+
+			// given residue at the end fo distance
+			double Vres = 0;
+			double ares = 0;
+
+			// tune up the jerk to deal with the discretizatio error,
+			// and to come to the end point with the correct V and a
+			jerk = getCorrectedJerk(jerk, xend - s, v, a, Vres, ares);
+
 			if (jerk > jerkmax) {
 				jerk = jerkmax;
 			}
