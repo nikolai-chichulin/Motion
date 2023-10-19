@@ -17,7 +17,7 @@ public class Solver {
 
 		@Override
 		public String toString() {
-			String s = String.format(Locale.US, "[%d, %d, %d, %d]", i1, i2, i3, i4);
+			String s = String.format(Locale.US, "%d%d%d%d", i1, i2, i3, i4);
 			return s;
 		}
 
@@ -37,6 +37,7 @@ public class Solver {
 	}
 
 	public int scan(String ins, int bullsExp, int cowsExp) {
+		boolean output = false;
 		variants.clear();
 		int ret = 0;
 		for (int i1 = 0; i1 < 10; i1++) {
@@ -80,8 +81,9 @@ public class Solver {
 						if (bullsAct == bullsExp && cowsAct == cowsExp) {
 							variants.add(new Four(i1, i2, i3, i4));
 							ret++;
-							System.out.println(Integer.toString(i1) + "." + Integer.toString(i2) + "."
-									+ Integer.toString(i3) + "." + Integer.toString(i4));
+							if (output)
+								System.out.println(Integer.toString(i1) + "." + Integer.toString(i2) + "."
+										+ Integer.toString(i3) + "." + Integer.toString(i4));
 						} else {
 							mask[n] = false;
 						}
@@ -89,7 +91,24 @@ public class Solver {
 				}
 			}
 		}
-		System.out.println("Number of variants = " + ret);
+		if (output)
+			System.out.println("Number of variants = " + ret);
+		return ret;
+	}
+
+	/**
+	 * Does the next turns based on the current variants.
+	 * 
+	 * @param turn number of turn
+	 * @return the next turn as a four of integers
+	 */
+	Four nextTurn(int turn) {
+		if (turn == 1) {
+			return new Four(0, 1, 2, 3);
+		} else if (turn == 2) {
+			return new Four(4, 5, 6, 7);
+		}
+		Four ret = variants.get(0);
 		return ret;
 	}
 
@@ -114,18 +133,25 @@ public class Solver {
 	public void solve() {
 		int r = 10 * 9 * 8 * 7;
 		System.out.println("Initial number of variants = " + r);
+		Four nextTurn = new Four(0, 0, 0, 0);
 
+		int i = 0;
 		try (Scanner in = new Scanner(System.in)) {
-			while (r > 1) {
-				System.out.println("Your move: ");
-				String ins = in.next();
-				System.out.println("Bulls cows: ");
+			while (r > 0) {
+				i++;
+				nextTurn = nextTurn(i);
+				System.out.println("Move " + i + ": " + nextTurn);
+				System.out.println("Reaction (bulls cows): ");
 				int bulls = in.nextInt();
 				int cows = in.nextInt();
-				System.out.println(String.format(Locale.US, "Check: number: %s bulls: %d cows: %d ", ins, bulls, cows));
-				r = scan(ins, bulls, cows);
+				if (bulls == 4 && cows == 0) {
+					r = 0;
+				} else {
+					r = scan(nextTurn.toString(), bulls, cows);
+					System.out.println("...there are still " + r + " variants...");
+				}
 			}
-			System.out.println("Win!");
+			System.out.println(nextTurn + " wins in " + i + " turns!");
 		}
 	}
 }
