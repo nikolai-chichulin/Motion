@@ -19,34 +19,6 @@ public class Solver {
 		}
 	}
 
-	public int rescan1() {
-		int ret = 0;
-		for (int i1 = 0; i1 < 10; i1++) {
-			if (p[0][i1] == 0) {
-				continue;
-			}
-			for (int i2 = 0; i2 < 10; i2++) {
-				if (i2 == i1 || p[1][i2] == 0) {
-					continue;
-				}
-				for (int i3 = 0; i3 < 10; i3++) {
-					if (i3 == i2 || i3 == i1 || p[2][i3] == 0) {
-						continue;
-					}
-					for (int i4 = 0; i4 < 10; i4++) {
-						if (i4 == i3 || i4 == i2 || i4 == i1 || p[3][i4] == 0) {
-							continue;
-						}
-						ret++;
-//						System.out.println(Integer.toString(i1) + "." + Integer.toString(i2) + "."
-//								+ Integer.toString(i3) + "." + Integer.toString(i4));
-					}
-				}
-			}
-		}
-		return ret;
-	}
-
 	public int rescan2(String ins, int bullsExp, int cowsExp) {
 		int ret = 0;
 		for (int i1 = 0; i1 < 10; i1++) {
@@ -102,9 +74,9 @@ public class Solver {
 		return ret;
 	}
 
-	public void run() {
-		int r = rescan1();
-		System.out.println("Number of variants = " + r);
+	public void help() {
+		int r = 10 * 9 * 8 * 7;
+		System.out.println("Initial number of variants = " + r);
 
 		try (Scanner in = new Scanner(System.in)) {
 			while (r > 1) {
