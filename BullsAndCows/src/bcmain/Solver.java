@@ -7,6 +7,22 @@ import java.util.Scanner;
 
 public class Solver {
 
+	class Pair {
+		Pair(int a, int b) {
+			i1 = a;
+			i2 = b;
+		}
+
+		@Override
+		public String toString() {
+			String s = String.format(Locale.US, "%d, %d", i1, i2);
+			return s;
+		}
+
+		int i1;
+		int i2;
+	}
+
 	class Four {
 		Four(int a, int b, int c, int d) {
 			i1 = a;
@@ -153,5 +169,81 @@ public class Solver {
 			}
 			System.out.println(nextTurn + " wins in " + i + " turns!");
 		}
+	}
+
+	public int test(String secret, boolean output) {
+		if (!valid(secret)) {
+			return -1;
+		}
+		int r = 10 * 9 * 8 * 7;
+		Four nextTurn = new Four(0, 0, 0, 0);
+		int i = 0;
+		while (r > 0) {
+			i++;
+			nextTurn = nextTurn(i);
+			if (output)
+				System.out.println("Move " + i + ": " + nextTurn);
+			Pair answer = getAnswer(nextTurn.toString(), secret);
+			int bulls = answer.i1;
+			int cows = answer.i2;
+			if (bulls == 4 && cows == 0) {
+				r = 0;
+			} else {
+				r = scan(nextTurn.toString(), bulls, cows);
+				if (output)
+					System.out.println(String.format(Locale.US, "Reaction: %d bulls %d cows, still %d variants exist.",
+							bulls, cows, r));
+			}
+		}
+		if (output)
+			System.out.println("Win in " + i + " turns!");
+		return i;
+	}
+
+	/**
+	 * Checks if the secret number is valid.
+	 * 
+	 * @param secret
+	 * @return
+	 */
+	boolean valid(String secret) {
+		for (int i = 0; i < secret.length(); i++) {
+			for (int j = i + 1; j < secret.length(); j++) {
+				if (secret.charAt(j) == secret.charAt(i)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Returns the result of the attempt as a pair of bulls and cows.
+	 * 
+	 * @param attempt the probe string
+	 * @param secret  the secret string
+	 * @return
+	 */
+	Pair getAnswer(String attempt, String secret) {
+		int bulls = 0;
+		int cows = 0;
+		if (attempt.length() == secret.length()) {
+			int length = attempt.length();
+			bulls = 0;
+			cows = 0;
+			for (int i = 0; i < length; i++) {
+				if (attempt.charAt(i) == secret.charAt(i)) {
+					bulls++;
+				}
+				for (int j = 0; j < length; j++) {
+					if (j != i) {
+						if (attempt.charAt(i) == secret.charAt(j)) {
+							cows++;
+						}
+					}
+				}
+			}
+		}
+		return new Pair(bulls, cows);
 	}
 }
